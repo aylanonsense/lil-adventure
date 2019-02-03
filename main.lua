@@ -5,24 +5,42 @@ local RENDER_SCALE = 3
 local LEVEL_WIDTH = 12
 local LEVEL_HEIGHT = 12
 local LEVEL_DATA = [[
-TT.TTTTT....
-T......T....
-T......T....
-T......T....
-T......T....
-T......T....
-T......T....
-TTTTTTTT....
-TTTTTTTT....
-TTTTTTTT....
-TTTTTTTT....
-TTTTTTTT....
+FFTTI,.FT,FT
+TFF.LMMMIT.F
+.T.,.T.,LMMM
+F,....,,....
+...H..,15555
+~~..,..36666
+,..,..,26676
+FF.,..,,2444
+.F,T,....,.,
+T.F,,F,.,,..
+TF,F.TF.F.,T
+FTT.TFFTTFTF
 ]]
 local TILE_TYPES = {
   -- Grass
   ['.'] = { sprite = 1 },
-  -- Tree
-  ['T'] = { sprite = 2, isImpassable = true }
+  [','] = { sprite = 2 },
+  -- Trees
+  ['T'] = { sprite = 3, isImpassable = true },
+  ['F'] = { sprite = 4, isImpassable = true },
+  -- Cliffs
+  ['I'] = { sprite = 5, isImpassable = true },
+  ['L'] = { sprite = 6, isImpassable = true },
+  ['M'] = { sprite = 7, isImpassable = true },
+  -- House
+  ['H'] = { sprite = 8, isImpassable = true },
+  -- Path
+  ['~'] = { sprite = 9 },
+  -- Lake
+  ['1'] = { sprite = 10, isImpassable = true },
+  ['2'] = { sprite = 11, isImpassable = true },
+  ['3'] = { sprite = 12, isImpassable = true },
+  ['4'] = { sprite = 13, isImpassable = true },
+  ['5'] = { sprite = 14, isImpassable = true },
+  ['6'] = { sprite = 15, isImpassable = true },
+  ['7'] = { sprite = 16, isImpassable = true }
 }
 
 -- Game objects
@@ -35,17 +53,25 @@ local tileGrid
 local playerImage
 local tilesImage
 
+-- Sound effects
+local moveSound
+local bumpSound
+
 -- Initializes the game
 function love.load()
   -- Load images
   playerImage = loadImage('img/player.png')
   tilesImage = loadImage('img/tiles.png')
 
+  -- Load sound effects
+  moveSound = love.audio.newSource('sfx/move.wav', 'static')
+  bumpSound = love.audio.newSource('sfx/bump.wav', 'static')
+
   -- Create the level
   createTileGrid()
 
   -- Create the player character
-  createPlayer()
+  createPlayer(6, 6)
 end
 
 -- Updates the game state
@@ -68,13 +94,21 @@ function love.draw()
     for row = 1, LEVEL_HEIGHT do
       local tile = tileGrid[col][row]
       if tile then
-        drawImage(tilesImage, tile.sprite, calculateRenderPosition(col, row))
+        drawImage(tilesImage, tile.sprite, false, calculateRenderPosition(col, row))
       end
     end
   end
 
   -- Draw the player
-  drawImage(playerImage, 1, calculateRenderPosition(player.col, player.row))
+  local sprite
+  if player.facing == 'down' then
+    sprite = 1
+  elseif player.facing == 'up' then
+    sprite = 3
+  else
+    sprite = 2
+  end
+  drawImage(playerImage, sprite, player.facing == 'left', calculateRenderPosition(player.col, player.row))
 end
 
 -- Move the player when a button is pressed
@@ -84,12 +118,16 @@ function love.keypressed(key)
   local row = player.row
   if key == 'up' then
     row = row - 1
+    player.facing = 'up'
   elseif key == 'down' then
     row = row + 1
+    player.facing = 'down'
   elseif key == 'left' then
     col = col - 1
+    player.facing = 'left'
   elseif key == 'right' then
     col = col + 1
+    player.facing = 'right'
   end
   -- Figure out if the player can move into that tile
   local canMoveIntoTile = true
@@ -105,14 +143,18 @@ function love.keypressed(key)
   if canMoveIntoTile then
     player.col = col
     player.row = row
+    love.audio.play(moveSound:clone())
+  else
+    love.audio.play(bumpSound:clone())
   end
 end
 
 -- Creates the player
-function createPlayer()
+function createPlayer(col, row)
   player = {
-    col = 5,
-    row = 5
+    col = col,
+    row = row,
+    facing = 'down'
   }
 end
 
@@ -137,12 +179,12 @@ function loadImage(filePath)
 end
 
 -- Draws a 16x16 sprite from an image, spriteNum=1 is the upper-leftmost sprite
-function drawImage(image, spriteNum, x, y)
+function drawImage(image, spriteNum, flipHorizontally, x, y)
   local columns = math.floor(image:getWidth() / 16)
   local col = (spriteNum - 1) % columns
   local row = math.floor((spriteNum - 1) / columns)
   local quad = love.graphics.newQuad(16 * col, 16 * row, 16, 16, image:getDimensions())
-  love.graphics.draw(image, quad, x, y)
+  love.graphics.draw(image, quad, x + (flipHorizontally and 16 or 0), y, 0, flipHorizontally and -1 or 1, 1)
 end
 
 -- Takes in a column and a row and returns the corresponding x,y coordinates
