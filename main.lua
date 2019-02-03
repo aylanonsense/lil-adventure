@@ -113,39 +113,41 @@ end
 
 -- Move the player when a button is pressed
 function love.keypressed(key)
-  -- Figure out which tile is being moved into
-  local col = player.col
-  local row = player.row
-  if key == 'up' then
-    row = row - 1
-    player.facing = 'up'
-  elseif key == 'down' then
-    row = row + 1
-    player.facing = 'down'
-  elseif key == 'left' then
-    col = col - 1
-    player.facing = 'left'
-  elseif key == 'right' then
-    col = col + 1
-    player.facing = 'right'
-  end
-  -- Figure out if the player can move into that tile
-  local canMoveIntoTile = true
-  if col < 1 or col > LEVEL_WIDTH or row < 1 or row > LEVEL_HEIGHT then
-    canMoveIntoTile = false
-  else
-    local tile = tileGrid[col][row]
-    if tile and tile.isImpassable then
-      canMoveIntoTile = false
+  if key == 'up' or key == 'down' or key == 'left' or key == 'right' then
+    -- Figure out which tile is being moved into
+    local col = player.col
+    local row = player.row
+    if key == 'up' then
+      row = row - 1
+      player.facing = 'up'
+    elseif key == 'down' then
+      row = row + 1
+      player.facing = 'down'
+    elseif key == 'left' then
+      col = col - 1
+      player.facing = 'left'
+    elseif key == 'right' then
+      col = col + 1
+      player.facing = 'right'
     end
-  end
-  -- Move the player
-  if canMoveIntoTile then
-    player.col = col
-    player.row = row
-    love.audio.play(moveSound:clone())
-  else
-    love.audio.play(bumpSound:clone())
+    -- Figure out if the player can move into that tile
+    local canMoveIntoTile = true
+    if col < 1 or col > LEVEL_WIDTH or row < 1 or row > LEVEL_HEIGHT then
+      canMoveIntoTile = false
+    else
+      local tile = tileGrid[col][row]
+      if tile and tile.isImpassable then
+        canMoveIntoTile = false
+      end
+    end
+    -- Move the player
+    if canMoveIntoTile then
+      player.col = col
+      player.row = row
+      love.audio.play(moveSound:clone())
+    else
+      love.audio.play(bumpSound:clone())
+    end
   end
 end
 
