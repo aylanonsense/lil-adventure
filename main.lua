@@ -1,23 +1,11 @@
--- Constants
+-- Render constants
 local GAME_WIDTH = 192
 local GAME_HEIGHT = 192
-local RENDER_SCALE = 3
-local LEVEL_WIDTH = 12
-local LEVEL_HEIGHT = 12
-local LEVEL_DATA = [[
-FFTTI,.FT,FT
-TFF.LMMMIT.F
-.T.,.T.,LMMM
-F,....,,....
-...H..,15555
-~~..,..36666
-,..,..,26676
-FF.,..,,2444
-.F,T,....,.,
-T.F,,F,.,,..
-TF,F.TF.F.,T
-FTT.TFFTTFTF
-]]
+local RENDER_SCALE = 1
+
+-- Game constants
+local LEVEL_COLUMNS = 12
+local LEVEL_ROWS = 12
 local TILE_TYPES = {
   -- Grass
   ['.'] = { sprite = 1 },
@@ -42,59 +30,71 @@ local TILE_TYPES = {
   ['6'] = { sprite = 15, isImpassable = true },
   ['7'] = { sprite = 16, isImpassable = true }
 }
+local LEVEL_DATA = [[
+FFTTI,.FT,FT
+TFF.LMMMIT.F
+.T.,.T.,LMMM
+F,....,,....
+...H..,15555
+~~..,..36666
+,..,..,26676
+FF.,..,,2444
+.F,T,....,.,
+T.F,,F,.,,..
+TF,F.TF.F.,T
+FTT.TFFTTFTF
+]]
 
--- Game objects
+-- Game variables
 local player
-
--- Tile grid
 local tileGrid
 
--- Images
+-- Assets
 local playerImage
 local tilesImage
-
--- Sound effects
 local moveSound
 local bumpSound
 
--- Initializes the game
+-- Initialize the game
 function love.load()
-  -- Load images
-  playerImage = loadImage('img/player.png')
-  tilesImage = loadImage('img/tiles.png')
-
-  -- Load sound effects
+  -- Load assets
+  playerImage = love.graphics.newImage('img/player.png')
+  tilesImage = love.graphics.newImage('img/tiles.png')
+  playerImage:setFilter('nearest', 'nearest')
+  tilesImage:setFilter('nearest', 'nearest')
   moveSound = love.audio.newSource('sfx/move.wav', 'static')
   bumpSound = love.audio.newSource('sfx/bump.wav', 'static')
 
   -- Create the level
-  createTileGrid()
+  tileGrid = {}
+  for col = 1, LEVEL_COLUMNS do
+    tileGrid[col] = {}
+    for row = 1, LEVEL_ROWS do
+      local i = (LEVEL_ROWS + 1) * (row - 1) + col
+      local symbol = string.sub(LEVEL_DATA, i, i)
+      tileGrid[col][row] = TILE_TYPES[symbol]
+    end
+  end
 
-  -- Create the player character
-  createPlayer(6, 6)
+  -- Create the player
+  player = {
+    col = 6,
+    row = 6,
+    facing = 'down'
+  }
 end
 
--- Updates the game state
-function love.update(dt)
-end
-
--- Renders the game
+-- Render the game
 function love.draw()
-  -- Set some drawing filters
-  love.graphics.setDefaultFilter('nearest', 'nearest')
+  -- Scale and crop the screen
+  love.graphics.setScissor(0, 0, RENDER_SCALE * GAME_WIDTH, RENDER_SCALE * GAME_HEIGHT)
   love.graphics.scale(RENDER_SCALE, RENDER_SCALE)
 
-  -- Black out the screen
-  love.graphics.setColor(0, 0, 0, 1)
-  love.graphics.rectangle('fill', 0, 0, GAME_WIDTH, GAME_HEIGHT)
-  love.graphics.setColor(1, 1, 1, 1)
-
   -- Draw the tiles
-  for col = 1, LEVEL_WIDTH do
-    for row = 1, LEVEL_HEIGHT do
-      local tile = tileGrid[col][row]
-      if tile then
-        drawImage(tilesImage, tile.sprite, false, calculateRenderPosition(col, row))
+  for col = 1, LEVEL_COLUMNS do
+    for row = 1, LEVEL_ROWS do
+      if tileGrid[col][row] then
+        drawSprite(tilesImage, 16, 16, tileGrid[col][row].sprite, calculateRenderPosition(col, row))
       end
     end
   end
@@ -108,42 +108,41 @@ function love.draw()
   else
     sprite = 2
   end
-  drawImage(playerImage, sprite, player.facing == 'left', calculateRenderPosition(player.col, player.row))
+  local x, y = calculateRenderPosition(player.col, player.row)
+  drawSprite(playerImage, 16, 16, sprite, x, y, player.facing == 'left')
 end
 
--- Move the player when a button is pressed
+-- Press arrow keys to move the player
 function love.keypressed(key)
-  if key == 'up' or key == 'down' or key == 'left' or key == 'right' then
-    -- Figure out which tile is being moved into
-    local col = player.col
-    local row = player.row
-    if key == 'up' then
-      row = row - 1
-      player.facing = 'up'
-    elseif key == 'down' then
-      row = row + 1
-      player.facing = 'down'
-    elseif key == 'left' then
-      col = col - 1
-      player.facing = 'left'
-    elseif key == 'right' then
-      col = col + 1
-      player.facing = 'right'
-    end
-    -- Figure out if the player can move into that tile
-    local canMoveIntoTile = true
-    if col < 1 or col > LEVEL_WIDTH or row < 1 or row > LEVEL_HEIGHT then
+  -- Figure out which tile is being moved into
+  local col, row = player.col, player.row
+  if key == 'up' or key == 'w' then
+    row = row - 1
+    player.facing = 'up'
+  elseif key == 'left' or key == 'a' then
+    col = col - 1
+    player.facing = 'left'
+  elseif key == 'down' or key == 's' then
+    row = row + 1
+    player.facing = 'down'
+  elseif key == 'right' or key == 'd' then
+    col = col + 1
+    player.facing = 'right'
+  end
+  -- Figure out if the player can move into that tile
+  local canMoveIntoTile = true
+  if col < 1 or col > LEVEL_COLUMNS or row < 1 or row > LEVEL_ROWS then
+    canMoveIntoTile = false
+  else
+    local tile = tileGrid[col][row]
+    if tile and tile.isImpassable then
       canMoveIntoTile = false
-    else
-      local tile = tileGrid[col][row]
-      if tile and tile.isImpassable then
-        canMoveIntoTile = false
-      end
     end
-    -- Move the player
+  end
+  -- Move the player
+  if col ~= player.col or row ~= player.row then
     if canMoveIntoTile then
-      player.col = col
-      player.row = row
+      player.col, player.row = col, row
       love.audio.play(moveSound:clone())
     else
       love.audio.play(bumpSound:clone())
@@ -151,45 +150,20 @@ function love.keypressed(key)
   end
 end
 
--- Creates the player
-function createPlayer(col, row)
-  player = {
-    col = col,
-    row = row,
-    facing = 'down'
-  }
-end
-
--- Create a 2D grid of tiles
-function createTileGrid()
-  tileGrid = {}
-  for col = 1, LEVEL_WIDTH do
-    tileGrid[col] = {}
-    for row = 1, LEVEL_HEIGHT do
-      local i = (LEVEL_HEIGHT + 1) * (row - 1) + col
-      local symbol = string.sub(LEVEL_DATA, i, i)
-      tileGrid[col][row] = TILE_TYPES[symbol]
-    end
-  end
-end
-
--- Loads a pixelated image
-function loadImage(filePath)
-  local image = love.graphics.newImage(filePath)
-  image:setFilter('nearest', 'nearest')
-  return image
-end
-
--- Draws a 16x16 sprite from an image, spriteNum=1 is the upper-leftmost sprite
-function drawImage(image, spriteNum, flipHorizontally, x, y)
-  local columns = math.floor(image:getWidth() / 16)
-  local col = (spriteNum - 1) % columns
-  local row = math.floor((spriteNum - 1) / columns)
-  local quad = love.graphics.newQuad(16 * col, 16 * row, 16, 16, image:getDimensions())
-  love.graphics.draw(image, quad, x + (flipHorizontally and 16 or 0), y, 0, flipHorizontally and -1 or 1, 1)
-end
-
 -- Takes in a column and a row and returns the corresponding x,y coordinates
 function calculateRenderPosition(col, row)
   return 16 * (col - 1), 16 * (row - 1)
+end
+
+-- Draws a sprite from a sprite sheet, spriteNum=1 is the upper-leftmost sprite
+function drawSprite(spriteSheetImage, spriteWidth, spriteHeight, sprite, x, y, flipHorizontal, flipVertical, rotation)
+  local width, height = spriteSheetImage:getDimensions()
+  local numColumns = math.floor(width / spriteWidth)
+  local col, row = (sprite - 1) % numColumns, math.floor((sprite - 1) / numColumns)
+  love.graphics.draw(spriteSheetImage,
+    love.graphics.newQuad(spriteWidth * col, spriteHeight * row, spriteWidth, spriteHeight, width, height),
+    x + spriteWidth / 2, y + spriteHeight / 2,
+    rotation or 0,
+    flipHorizontal and -1 or 1, flipVertical and -1 or 1,
+    spriteWidth / 2, spriteHeight / 2)
 end
