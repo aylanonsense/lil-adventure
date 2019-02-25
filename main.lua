@@ -1,7 +1,7 @@
 -- Render constants
 local GAME_WIDTH = 192
 local GAME_HEIGHT = 192
-local RENDER_SCALE = 1
+local RENDER_SCALE = 3
 
 -- Game constants
 local LEVEL_COLUMNS = 12

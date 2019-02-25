@@ -1,8 +1,11 @@
 # lil-adventure
 A lil adventure where you walkabout a tile grid.
 
+## Getting started
+Download [Castle](castle://castle.games/@bridgs/lil-adventure) to play!
+
 ## Controls
-Press the arrow keys to move. That's it!
+Use the arrow keys to move. That's it!
 
 ## Features
 Features this project showcases that you can learn from:
