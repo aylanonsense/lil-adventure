@@ -2,7 +2,7 @@
 A lil adventure where you walkabout a tile grid.
 
 ## Getting started
-Download [Castle](castle://castle.games/@bridgs/lil-adventure) to play!
+Check it out on [Castle](https://castle.games/@bridgs/lil-adventure) to start playing!
 
 ## Controls
 Use the arrow keys to move. That's it!
