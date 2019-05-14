@@ -8,7 +8,7 @@ Check it out on [Castle](https://castle.games/@bridgs/lil-adventure) to start pl
 Use the arrow keys to move. That's it!
 
 ## Features
-Features this project showcases that you can learn from:
+Features of this project that you can learn from:
 
 - Tile-based collision detection
 - Level data stored as an in-memory string

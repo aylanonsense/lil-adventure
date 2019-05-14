@@ -1,8 +1,3 @@
--- Render constants
-local GAME_WIDTH = 192
-local GAME_HEIGHT = 192
-local RENDER_SCALE = 3
-
 -- Game constants
 local LEVEL_COLUMNS = 12
 local LEVEL_ROWS = 12
@@ -58,10 +53,9 @@ local bumpSound
 -- Initialize the game
 function love.load()
   -- Load assets
+  love.graphics.setDefaultFilter('nearest', 'nearest')
   playerImage = love.graphics.newImage('img/player.png')
   tilesImage = love.graphics.newImage('img/tiles.png')
-  playerImage:setFilter('nearest', 'nearest')
-  tilesImage:setFilter('nearest', 'nearest')
   moveSound = love.audio.newSource('sfx/move.wav', 'static')
   bumpSound = love.audio.newSource('sfx/bump.wav', 'static')
 
@@ -86,10 +80,6 @@ end
 
 -- Render the game
 function love.draw()
-  -- Scale and crop the screen
-  love.graphics.setScissor(0, 0, RENDER_SCALE * GAME_WIDTH, RENDER_SCALE * GAME_HEIGHT)
-  love.graphics.scale(RENDER_SCALE, RENDER_SCALE)
-
   -- Draw the tiles
   for col = 1, LEVEL_COLUMNS do
     for row = 1, LEVEL_ROWS do
@@ -129,6 +119,7 @@ function love.keypressed(key)
     col = col + 1
     player.facing = 'right'
   end
+
   -- Figure out if the player can move into that tile
   local canMoveIntoTile = true
   if col < 1 or col > LEVEL_COLUMNS or row < 1 or row > LEVEL_ROWS then
@@ -139,6 +130,7 @@ function love.keypressed(key)
       canMoveIntoTile = false
     end
   end
+
   -- Move the player
   if col ~= player.col or row ~= player.row then
     if canMoveIntoTile then
