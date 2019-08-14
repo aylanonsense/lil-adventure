@@ -4,6 +4,6 @@ name: lil adventure
 username: bridgs
 primaryColor: 23AF4D
 coverImage: cover-image.png
-description: A good starting point for a tile-based adventure game. Make your own world and things!
+description: A good starting point for a tile-based adventure game. Make your own world and characters!
 dimensions: 192x192
 scaling: step
